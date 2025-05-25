@@ -14,8 +14,8 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useLocalSearchParams, Link } from "expo-router"
-import { propertiesService } from "../../../services/properties.service"
-import type { Property } from "../../../types/Property"
+import { propertiesService } from "../../../../services/properties.service"
+import type { Property } from "../../../../types/Property"
 import { Ionicons } from "@expo/vector-icons"
 
 const { width } = Dimensions.get("window")

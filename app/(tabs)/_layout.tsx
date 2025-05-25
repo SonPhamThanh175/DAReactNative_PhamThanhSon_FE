@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { useSession } from '../../context/AuthContext';
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, Tabs } from "expo-router";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useSession } from "../../context/AuthContext";
 
 export default function TabLayout() {
   const { session, isLoading } = useSession();
@@ -25,16 +25,16 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarActiveTintColor: "#2563eb",
+        tabBarInactiveTintColor: "#6b7280",
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: "#ffffff",
           borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
+          borderTopColor: "#e5e7eb",
           height: 85,
           paddingBottom: 25,
           paddingTop: 10,
-          shadowColor: '#000',
+          shadowColor: "#000",
           shadowOffset: {
             width: 0,
             height: -2,
@@ -45,12 +45,12 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: "600",
           marginTop: 4,
         },
         headerStyle: {
-          backgroundColor: '#ffffff',
-          shadowColor: '#000',
+          backgroundColor: "#ffffff",
+          shadowColor: "#000",
           shadowOffset: {
             width: 0,
             height: 2,
@@ -61,21 +61,26 @@ export default function TabLayout() {
         },
         headerTitleStyle: {
           fontSize: 18,
-          fontWeight: '700',
-          color: '#1f2937',
+          fontWeight: "700",
+          color: "#1f2937",
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Trang chủ',
+          title: "Trang chủ",
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons 
-                name={focused ? 'home' : 'home-outline'} 
-                size={size} 
-                color={color} 
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconContainerActive,
+              ]}
+            >
+              <Ionicons
+                name={focused ? "home" : "home-outline"}
+                size={size}
+                color={color}
               />
             </View>
           ),
@@ -83,38 +88,28 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Tìm kiếm',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons 
-                name={focused ? 'search' : 'search-outline'} 
-                size={size} 
-                color={color} 
-              />
-            </View>
-          ),
-          // headerTitle: 'Tìm kiếm bất động sản',
-        }}
-      />
-      <Tabs.Screen
         name="properties"
         options={{
-          title: 'Tài sản',
+          title: "Bài đăng",
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons 
-                name={focused ? 'business' : 'business-outline'} 
-                size={size} 
-                color={color} 
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconContainerActive,
+              ]}
+            >
+              <Ionicons
+                name={focused ? "business" : "business-outline"}
+                size={size}
+                color={color}
               />
             </View>
           ),
           // headerTitle: 'Quản lý tài sản',
         }}
       />
-      <Tabs.Screen
+
+      {/* <Tabs.Screen
         name="favorites"
         options={{
           title: 'Yêu thích',
@@ -128,18 +123,43 @@ export default function TabLayout() {
             </View>
           ),
           // headerTitle: 'Danh sách yêu thích',
+        }} 
+      />*/}
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Tìm kiếm",
+          tabBarIcon: ({ color, size, focused }) => (
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconContainerActive,
+              ]}
+            >
+              <Ionicons
+                name={focused ? "search" : "search"}
+                size={size}
+                color={color}
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Hồ sơ',
+          title: "Hồ sơ",
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons 
-                name={focused ? 'person' : 'person-outline'} 
-                size={size} 
-                color={color} 
+            <View
+              style={[
+                styles.iconContainer,
+                focused && styles.iconContainerActive,
+              ]}
+            >
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={size}
+                color={color}
               />
             </View>
           ),
@@ -153,16 +173,16 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingContent: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+    alignItems: "center",
+    backgroundColor: "#ffffff",
     padding: 40,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -175,15 +195,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#374151",
+    textAlign: "center",
   },
   iconContainer: {
     padding: 4,
     borderRadius: 8,
   },
   iconContainerActive: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: "#dbeafe",
   },
 });

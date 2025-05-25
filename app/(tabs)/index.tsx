@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useCallback } from "react"
 import {
   Text,
@@ -154,9 +152,13 @@ export default function HomeScreen() {
     setFilteredProperties(properties)
   }, [properties])
 
-  const handleCardPress = (id: string) => {
-    router.push(`/properties/${id}`)
-  }
+// const handleCardPress = (id: string) => {
+//   router.push(`/properties/id/${id}`);
+// };
+const handleCardPress = (id: string) => {
+  router.push(`/(tabs)/properties/id/${id}`);
+};
+
 
   const handleSearchPress = () => {
     router.push("/(tabs)/search")
