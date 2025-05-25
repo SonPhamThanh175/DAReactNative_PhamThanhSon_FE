@@ -1,6 +1,7 @@
 import api from './axios.config';
 import * as SecureStore from 'expo-secure-store';
 import { User } from '../types/User';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const authService = {
   async register(email: string, password: string, name: string, phone: string): Promise<string> {
@@ -20,7 +21,7 @@ async login(email: string, password: string): Promise<{ token: string; user: Use
     console.log('Request payload:', { email, password });
     
     const response = await api.post('/auth/login', { email, password });
-
+    await AsyncStorage.setItem('userId', response.data.user.id);
     console.log('Login API response:', response.data);
 
     await SecureStore.setItemAsync('userToken', response.data.token);

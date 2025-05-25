@@ -22,11 +22,11 @@ export const propertiesService = {
     }
   },
 
-getPropertiesByUser: async (): Promise<Property[]> => {
-    const res = await api.get('/properties/me'); 
+  getPropertiesByUser: async (userId: string): Promise<Property[]> => {
+    const res = await api.get(`/properties/user/${userId}`);
     return res.data;
   },
-  async getPropertyById(id: string): Promise<Property> {
+  async getPropertyById(id: string): Promise<Property> {  
     try {
       const response = await api.get(`/properties/${id}`);
       return response.data;
