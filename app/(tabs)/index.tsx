@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
   Text,
   View,
@@ -11,13 +11,12 @@ import {
   RefreshControl,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useSession } from "../../context/AuthContext"
 import { Ionicons } from "@expo/vector-icons"
 import { router } from "expo-router"
+import { useAsyncStorage } from "../../hooks/useAsyncStorage"
 import type { Property } from "../../types/Property"
-import { getPropertyTypeLabel , formatPrice } from "../../utils/validation"
+import { getPropertyTypeLabel, formatPrice } from "../../utils/validation"
 import { useProperties } from "../../hooks/useProperties"
-
 
 // Search Component
 const Search = ({ onSearchPress }: { onSearchPress: () => void }) => {
@@ -129,7 +128,7 @@ const Filters = ({ onFilterChange }: { onFilterChange: (filter: string) => void 
 }
 
 export default function HomeScreen() {
-  const { user } = useSession()
+  const { user, loading: userLoading } = useAsyncStorage()
   const { properties, featuredProperties, loading, error, refreshProperties } = useProperties()
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([])
   const [refreshing, setRefreshing] = useState(false)
@@ -148,17 +147,13 @@ export default function HomeScreen() {
   )
 
   // Initialize filtered properties when properties load
-  useState(() => {
+  useEffect(() => {
     setFilteredProperties(properties)
   }, [properties])
 
-// const handleCardPress = (id: string) => {
-//   router.push(`/properties/id/${id}`);
-// };
-const handleCardPress = (id: string) => {
-  router.push(`/(tabs)/properties/id/${id}`);
-};
-
+  const handleCardPress = (id: string) => {
+    router.push(`/(tabs)/properties/id/${id}`)
+  }
 
   const handleSearchPress = () => {
     router.push("/(tabs)/search")
@@ -239,7 +234,9 @@ const handleCardPress = (id: string) => {
                 />
                 <View style={styles.userText}>
                   <Text style={styles.greeting}>{getGreeting()}</Text>
-                  <Text style={styles.userName}>{user?.name || "Người dùng"}</Text>
+                  <Text style={styles.userName}>
+                    {userLoading ? "Đang tải..." : user?.name || "Người dùng"}
+                  </Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.notificationButton}>

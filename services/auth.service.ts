@@ -21,7 +21,10 @@ async login(email: string, password: string): Promise<{ token: string; user: Use
     console.log('Request payload:', { email, password });
     
     const response = await api.post('/auth/login', { email, password });
+    console.log('Login API response :', response);
     await AsyncStorage.setItem('userId', response.data.user.id);
+    await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+
     console.log('Login API response:', response.data);
 
     await SecureStore.setItemAsync('userToken', response.data.token);
