@@ -1,45 +1,188 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons } from '@expo/vector-icons';
+import { Redirect, Tabs } from 'expo-router';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useSession } from '../../context/AuthContext';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { session, isLoading } = useSession();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={styles.loadingText}>Đang tải ứng dụng...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
+        tabBarActiveTintColor: '#2563eb',
+        tabBarInactiveTintColor: '#6b7280',
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e5e7eb',
+          height: 85,
+          paddingBottom: 25,
+          paddingTop: 10,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
           },
-          default: {},
-        }),
-      }}>
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        headerStyle: {
+          backgroundColor: '#ffffff',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 5,
+        },
+        headerTitleStyle: {
+          fontSize: 18,
+          fontWeight: '700',
+          color: '#1f2937',
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Trang chủ',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons 
+                name={focused ? 'home' : 'home-outline'} 
+                size={size} 
+                color={color} 
+              />
+            </View>
+          ),
+          // headerTitle: 'Trang chủ',
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="search"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Tìm kiếm',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons 
+                name={focused ? 'search' : 'search-outline'} 
+                size={size} 
+                color={color} 
+              />
+            </View>
+          ),
+          // headerTitle: 'Tìm kiếm bất động sản',
+        }}
+      />
+      <Tabs.Screen
+        name="properties"
+        options={{
+          title: 'Tài sản',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons 
+                name={focused ? 'business' : 'business-outline'} 
+                size={size} 
+                color={color} 
+              />
+            </View>
+          ),
+          // headerTitle: 'Quản lý tài sản',
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Yêu thích',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons 
+                name={focused ? 'heart' : 'heart-outline'} 
+                size={size} 
+                color={color} 
+              />
+            </View>
+          ),
+          // headerTitle: 'Danh sách yêu thích',
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Hồ sơ',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons 
+                name={focused ? 'person' : 'person-outline'} 
+                size={size} 
+                color={color} 
+              />
+            </View>
+          ),
+          // headerTitle: 'Hồ sơ cá nhân',
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: 40,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+    minWidth: 200,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  iconContainer: {
+    padding: 4,
+    borderRadius: 8,
+  },
+  iconContainerActive: {
+    backgroundColor: '#dbeafe',
+  },
+});

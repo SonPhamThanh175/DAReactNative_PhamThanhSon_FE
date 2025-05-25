@@ -3,9 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@components/*": ["components/*"],
+      "@screens/*": ["app/(tabs)/*"],
+      "@services/*": ["services/*"],
+      "@types/*": ["types/*"],
+      "@assets/*": ["assets/*"]
     }
   },
   "include": [
