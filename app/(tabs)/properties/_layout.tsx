@@ -5,7 +5,7 @@
 //     <Stack>
 //       <Stack.Screen name="index" options={{ title: 'Danh sách tài sản' ,headerShown: false}} />
 //       {/* <Stack.Screen name="[id]" options={{ title: 'Chi tiết tài sản',headerShown: false  }} /> */}
-//       <Stack.Screen name="create" options={{ title: 'Tạo tài sản mới',headerShown: false }} />
+//       <Stack.Screen name="create" options={{ title: 'Tạo bài đăng mới',headerShown: false }} />
 //       <Stack.Screen name="[id]/edit" options={{ title: 'Chỉnh sửa tài sản',headerShown: false }} />
 //       <Stack.Screen name="[id]/[id]" options={{ title: 'Chi tiết sản phẩm' }} />
 //     </Stack>
@@ -28,7 +28,7 @@ export default function PropertiesLayout() {
       <Stack.Screen 
         name="create" 
         options={{ 
-          title: 'Tạo tài sản mới',
+          title: 'Tạo bài đăng mới',
           headerShown: false,
           presentation: 'modal' 
         }} 

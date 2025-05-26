@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+"use client"
+
+import { useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -10,62 +12,79 @@ import {
   Image,
   RefreshControl,
   Dimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { propertiesService } from "../../../services/properties.service";
-import { Property } from "../../../types/Property";
-import { Link, useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { propertiesService } from "../../../services/properties.service"
+import type { Property } from "../../../types/Property"
+import { Link, useFocusEffect, router } from "expo-router"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { Ionicons } from "@expo/vector-icons"
+import { FloatingActionButton } from "../../../components/FloatingActionButton"
+import { PropertyFilterModal, type FilterOptions, type PropertyType } from "../../../components/PropertyFilterModal"
 
-const { width } = Dimensions.get("window");
+const { width } = Dimensions.get("window")
 
 export default function PropertiesListScreen() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [properties, setProperties] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([])
+  const [filterModalVisible, setFilterModalVisible] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({
+    propertyTypes: [],
+    priceRange: "all",
+  })
 
   const fetchProperties = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const userId = await AsyncStorage.getItem("userId");
+      const userId = await AsyncStorage.getItem("userId")
       if (!userId) {
-        throw new Error("Không tìm thấy thông tin người dùng");
+        throw new Error("Không tìm thấy thông tin người dùng")
       }
-      const data = await propertiesService.getPropertiesByUser(userId);
-      console.log("Fetched user properties:", data);
-      setProperties(Array.isArray(data) ? data : []);
+      const data = await propertiesService.getPropertiesByUser(userId)
+      console.log("Fetched user properties:", data)
+      const propertiesArray = Array.isArray(data) ? data : []
+      setProperties(propertiesArray)
+
+      // Apply current filters to new data
+      const filtered = applyFilters(propertiesArray, activeFilters)
+      setFilteredProperties(filtered)
     } catch (err: any) {
-      setError(err.message || "Không thể tải danh sách tài sản.");
-      console.error("Failed to fetch properties:", err);
+      setError(err.message || "Không thể tải danh sách tài sản.")
+      console.error("Failed to fetch properties:", err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchProperties();
-    setRefreshing(false);
-  }, []);
+    setRefreshing(true)
+    await fetchProperties()
+    setRefreshing(false)
+  }, [])
 
   useFocusEffect(
     useCallback(() => {
-      fetchProperties();
-    }, [])
-  );
+      fetchProperties()
+    }, []),
+  )
+
+  const handleCreatePress = () => {
+    router.push("/(tabs)/properties/create")
+  }
 
   const formatPrice = (price: number): string => {
     if (price >= 1000000000) {
-      return `${(price / 1000000000).toFixed(1)} tỷ`;
+      return `${(price / 1000000000).toFixed(1)} tỷ`
     } else if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(1)} triệu`;
+      return `${(price / 1000000).toFixed(1)} triệu`
     } else {
-      return `${price.toLocaleString("vi-VN")} VNĐ`;
+      return `${price.toLocaleString("vi-VN")} VNĐ`
     }
-  };
+  }
 
   const getPropertyTypeLabel = (type: string): string => {
     const typeLabels: { [key: string]: string } = {
@@ -73,35 +92,35 @@ export default function PropertiesListScreen() {
       house: "Nhà phố",
       villa: "Biệt thự",
       land: "Đất nền",
-    };
-    return typeLabels[type] || type;
-  };
+    }
+    return typeLabels[type] || type
+  }
 
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "available":
-        return "#10b981";
+        return "#10b981"
       case "sold":
-        return "#ef4444";
+        return "#ef4444"
       case "rented":
-        return "#f59e0b";
+        return "#f59e0b"
       default:
-        return "#6b7280";
+        return "#6b7280"
     }
-  };
+  }
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case "available":
-        return "Có sẵn";
+        return "Có sẵn"
       case "sold":
-        return "Đã bán";
+        return "Đã bán"
       case "rented":
-        return "Đã cho thuê";
+        return "Đã cho thuê"
       default:
-        return status;
+        return status
     }
-  };
+  }
 
   const handleDelete = async (id: string) => {
     Alert.alert(
@@ -117,80 +136,122 @@ export default function PropertiesListScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await propertiesService.deleteProperty(id);
-              fetchProperties();
+              await propertiesService.deleteProperty(id)
+              fetchProperties()
+              Alert.alert("Thành công", "Tài sản đã được xóa thành công!")
             } catch (error) {
-              Alert.alert(
-                "Lỗi",
-                "Không thể xóa tài sản. Vui lòng thử lại sau."
-              );
+              Alert.alert("Lỗi", "Không thể xóa tài sản. Vui lòng thử lại sau.")
             }
           },
         },
       ],
-      { cancelable: true }
-    );
-  };
+      { cancelable: true },
+    )
+  }
+
+  const applyFilters = (properties: Property[], filters: FilterOptions) => {
+    let filtered = [...properties]
+
+    // Filter by property type
+    if (filters.propertyTypes.length > 0) {
+      filtered = filtered.filter((property) => filters.propertyTypes.includes(property.propertyType as PropertyType))
+    }
+
+    // Filter by price range
+    if (filters.minPrice !== undefined) {
+      filtered = filtered.filter((property) => property.price >= filters.minPrice!)
+    }
+    if (filters.maxPrice !== undefined) {
+      filtered = filtered.filter((property) => property.price <= filters.maxPrice!)
+    }
+
+    return filtered
+  }
+
+  const handleFilterApply = (filters: FilterOptions) => {
+    setActiveFilters(filters)
+    const filtered = applyFilters(properties, filters)
+    setFilteredProperties(filtered)
+  }
+
+  const handleFilterClear = () => {
+    setActiveFilters({
+      propertyTypes: [],
+      priceRange: "all",
+    })
+    setFilteredProperties(properties)
+  }
+
+  const getActiveFiltersCount = () => {
+    let count = 0
+    if (activeFilters.propertyTypes.length > 0) count++
+    if (activeFilters.priceRange !== "all" || activeFilters.minPrice || activeFilters.maxPrice) count++
+    return count
+  }
 
   const renderPropertyCard = ({ item }: { item: Property }) => {
-    const mainImage =
-      item.images && item.images.length > 0
-        ? item.images[0]
-        : "/placeholder.svg?height=200&width=300";
+    const mainImage = item.images && item.images.length > 0 ? item.images[0] : "/placeholder.svg?height=200&width=300"
 
     return (
       <View style={styles.propertyCard}>
         <Link href={`/(tabs)/properties/${item._id}`} asChild>
-          <TouchableOpacity style={styles.cardContent}>
+          <TouchableOpacity style={styles.cardContent} activeOpacity={0.8}>
             <Image source={{ uri: mainImage }} style={styles.propertyImage} />
 
             <View style={styles.propertyInfo}>
               <View style={styles.headerRow}>
                 <Text style={styles.propertyTitle} numberOfLines={2}>
-                  {item.title}
+                  {item.name || item.title}
                 </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(item.status) },
-                  ]}
-                >
-                  <Text style={styles.statusText}>
-                    {getStatusLabel(item.status)}
-                  </Text>
-                </View>
+                {item.status && (
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                    <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
+                  </View>
+                )}
               </View>
 
-              <Text style={styles.propertyPrice}>
-                {formatPrice(item.price)}
-              </Text>
+              <Text style={styles.propertyPrice}>{formatPrice(item.price)}</Text>
 
               <View style={styles.locationRow}>
                 <Ionicons name="location-outline" size={16} color="#6b7280" />
                 <Text style={styles.propertyLocation} numberOfLines={1}>
-                  {item.location}
+                  {item.address || item.location}
                 </Text>
               </View>
 
               <View style={styles.detailsRow}>
-                <View style={styles.detailItem}>
-                  <Ionicons name="resize-outline" size={14} color="#6b7280" />
-                  <Text style={styles.detailText}>{item.area}m²</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Ionicons name="bed-outline" size={14} color="#6b7280" />
-                  <Text style={styles.detailText}>{item.bedrooms} PN</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Ionicons name="water-outline" size={14} color="#6b7280" />
-                  <Text style={styles.detailText}>{item.bathrooms} PT</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Ionicons name="business-outline" size={14} color="#6b7280" />
-                  <Text style={styles.detailText}>
-                    {getPropertyTypeLabel(item.propertyType)}
-                  </Text>
-                </View>
+                {item.area && (
+                  <View style={styles.detailItem}>
+                    <Ionicons name="resize-outline" size={14} color="#6b7280" />
+                    <Text style={styles.detailText}>{item.area}m²</Text>
+                  </View>
+                )}
+                {item.bedrooms && (
+                  <View style={styles.detailItem}>
+                    <Ionicons name="bed-outline" size={14} color="#6b7280" />
+                    <Text style={styles.detailText}>{item.bedrooms} PN</Text>
+                  </View>
+                )}
+                {item.bathrooms && (
+                  <View style={styles.detailItem}>
+                    <Ionicons name="water-outline" size={14} color="#6b7280" />
+                    <Text style={styles.detailText}>{item.bathrooms} PT</Text>
+                  </View>
+                )}
+                {item.propertyType && (
+                  <View style={styles.detailItem}>
+                    <Ionicons name="business-outline" size={14} color="#6b7280" />
+                    <Text style={styles.detailText}>{getPropertyTypeLabel(item.propertyType)}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Date */}
+              <View style={styles.dateRow}>
+                <Ionicons name="calendar-outline" size={12} color="#9ca3af" />
+                <Text style={styles.dateText}>
+                  {new Date(item.createdAt || Date.now()).toLocaleDateString("vi-VN")}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -198,23 +259,34 @@ export default function PropertiesListScreen() {
 
         <View style={styles.actionsRow}>
           <Link href={`/(tabs)/properties/${item._id}/edit`} asChild>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
               <Ionicons name="create-outline" size={18} color="#2563eb" />
               <Text style={styles.editButtonText}>Chỉnh sửa</Text>
             </TouchableOpacity>
           </Link>
 
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDelete(item._id)}
-          >
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item._id)} activeOpacity={0.7}>
             <Ionicons name="trash-outline" size={18} color="#ef4444" />
             <Text style={styles.deleteButtonText}>Xóa</Text>
           </TouchableOpacity>
         </View>
       </View>
-    );
-  };
+    )
+  }
+
+  const EmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIcon}>
+        <Ionicons name="home-outline" size={80} color="#d1d5db" />
+      </View>
+      <Text style={styles.emptyTitle}>Chưa có tài sản nào</Text>
+      <Text style={styles.emptySubtitle}>Hãy tạo tài sản đầu tiên của bạn để bắt đầu quản lý bất động sản</Text>
+      <TouchableOpacity style={styles.emptyButton} onPress={handleCreatePress} activeOpacity={0.8}>
+        <Ionicons name="add-circle-outline" size={20} color="#ffffff" />
+        <Text style={styles.emptyButtonText}>Tạo tài sản mới</Text>
+      </TouchableOpacity>
+    </View>
+  )
 
   if (loading) {
     return (
@@ -224,7 +296,7 @@ export default function PropertiesListScreen() {
           <Text style={styles.loadingText}>Đang tải danh sách tài sản...</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   if (error) {
@@ -234,73 +306,72 @@ export default function PropertiesListScreen() {
           <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
           <Text style={styles.errorTitle}>Có lỗi xảy ra</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            onPress={fetchProperties}
-            style={styles.retryButton}
-          >
+          <TouchableOpacity onPress={fetchProperties} style={styles.retryButton} activeOpacity={0.8}>
             <Ionicons name="refresh-outline" size={20} color="#ffffff" />
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
+        <FloatingActionButton onPress={handleCreatePress} title="Tạo mới" icon="add" />
       </SafeAreaView>
-    );
+    )
   }
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tài sản của tôi</Text>
-        <Text style={styles.headerSubtitle}>
-          {properties.length} bất động sản
-        </Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Tài sản của tôi</Text>
+          <Text style={styles.headerSubtitle}>
+            {filteredProperties.length > 0
+              ? `${filteredProperties.length} bất động sản${filteredProperties.length !== properties.length ? ` (đã lọc từ ${properties.length})` : ""}`
+              : "Chưa có tài sản"}
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={() => router.push("/(tabs)/search")}>
+            <Ionicons name="search-outline" size={24} color="#374151" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerButton, getActiveFiltersCount() > 0 && styles.headerButtonActive]}
+            onPress={() => setFilterModalVisible(true)}
+          >
+            <Ionicons name="filter-outline" size={24} color={getActiveFiltersCount() > 0 ? "#2563eb" : "#374151"} />
+            {getActiveFiltersCount() > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{getActiveFiltersCount()}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* <Link href="/(tabs)/properties/create" asChild>
-        <TouchableOpacity style={styles.createButton}>
-          <Ionicons name="add-circle" size={24} color="#ffffff" />
-          <Text style={styles.createButtonText}>Thêm tài sản mới</Text>
-        </TouchableOpacity>
-      </Link> */}
+      {/* Properties List */}
+      <FlatList
+        data={filteredProperties}
+        keyExtractor={(item) => item._id}
+        renderItem={renderPropertyCard}
+        contentContainerStyle={[styles.listContainer, properties.length === 0 && styles.listContainerEmpty]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2563eb"]} tintColor="#2563eb" />
+        }
+        ListEmptyComponent={<EmptyState />}
+      />
 
-      {properties.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="home-outline" size={80} color="#d1d5db" />
-          <Text style={styles.emptyTitle}>Chưa có tài sản nào</Text>
-          <Text style={styles.emptySubtitle}>
-            Hãy thêm bất động sản đầu tiên của bạn
-          </Text>
-          {/* <Link href="/(tabs)/properties/create" asChild>
-            <TouchableOpacity style={styles.createButton}>
-              <Ionicons name="add-circle" size={24} color="#ffffff" />
-              <Text style={styles.createButtonText}>Thêm bài mới</Text>
-            </TouchableOpacity>
-          </Link> */}
-          <Link href="/(tabs)/properties/create" asChild>
-            <TouchableOpacity style={styles.createButton}>
-              <Ionicons name="add-circle" size={24} color="#ffffff" />
-              <Text style={styles.createButtonText}>Thêm tài sản mới</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-      ) : (
-        <FlatList
-          data={properties}
-          keyExtractor={(item) => item._id}
-          renderItem={renderPropertyCard}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#2563eb"]}
-              tintColor="#2563eb"
-            />
-          }
-        />
-      )}
+      {/* Floating Action Button */}
+      <FloatingActionButton onPress={handleCreatePress} title="Tạo mới" icon="add" loading={loading} />
+
+      {/* Property Filter Modal */}
+      <PropertyFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={handleFilterApply}
+        onClear={handleFilterClear}
+        currentFilters={activeFilters}
+      />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -309,11 +380,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
@@ -324,6 +406,19 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: "#6b7280",
+    fontWeight: "500",
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f9fafb",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingContainer: {
     flex: 1,
@@ -371,55 +466,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  createButton: {
-    paddingHorizontal: 20,
-    backgroundColor: "#2563eb",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: "#2563eb",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  createButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    marginBottom: 24,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#1f2937",
-    marginTop: 24,
     marginBottom: 8,
+    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 16,
     color: "#6b7280",
     textAlign: "center",
     marginBottom: 32,
+    lineHeight: 24,
   },
   emptyButton: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#2563eb",
-    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
   },
   emptyButtonText: {
     color: "#ffffff",
@@ -428,7 +506,11 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 100, // Space for FAB
+  },
+  listContainerEmpty: {
+    flex: 1,
   },
   propertyCard: {
     backgroundColor: "#ffffff",
@@ -500,6 +582,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 16,
+    marginBottom: 8,
   },
   detailItem: {
     flexDirection: "row",
@@ -509,6 +592,16 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     color: "#6b7280",
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  dateText: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginLeft: 4,
   },
   actionsRow: {
     flexDirection: "row",
@@ -543,4 +636,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#ef4444",
   },
-});
+  headerButtonActive: {
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#ef4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+})

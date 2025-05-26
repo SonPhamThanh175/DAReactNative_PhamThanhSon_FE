@@ -1,100 +1,110 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ActivityIndicator, 
-  Alert, 
-  ScrollView,
-  SafeAreaView,
+"use client"
+
+import { Ionicons } from "@expo/vector-icons"
+import { router } from "expo-router"
+import { useState } from "react"
+import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
-  Platform
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { propertiesService } from '../../../services/properties.service';
-import { router } from 'expo-router';
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { PropertyTypeSelector, type PropertyType } from "../../../components/PropertyTypeSelector"
+import { propertiesService } from "../../../services/properties.service"
 
 export default function CreatePropertyScreen() {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [address, setAddress] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [price, setPrice] = useState("")
+  const [area, setArea] = useState("")
+  const [address, setAddress] = useState("")
+  const [city, setCity] = useState("")
+  const [imageUrls, setImageUrls] = useState("")
+  const [propertyType, setPropertyType] = useState<PropertyType | null>(null)
+  const [loading, setLoading] = useState(false)
 
-// Trong handleCreateProperty function
-const handleCreateProperty = async () => {
-  if (!name || !description || !price || !address) {
-    Alert.alert('Lỗi', 'Vui lòng điền đầy đủ các trường bắt buộc.');
-    return;
+  const handleCreateProperty = async () => {
+    if (!title || !description || !price || !area || !address || !city || !propertyType) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ các trường bắt buộc.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Parse images from comma-separated URLs
+      const images = imageUrls
+        .split(',')
+        .map(url => url.trim())
+        .filter(url => url.length > 0)
+
+      const payload = {
+        title,
+        description,
+        price: Number.parseFloat(price.replace(/,/g, "")),
+        area: Number.parseFloat(area.replace(/,/g, "")),
+        address,
+        type: propertyType, // Changed from propertyType to type
+        city,
+        images: images.length > 0 ? images : ["http://example.com/default-image.jpg"]
+      }
+
+      const newProperty = await propertiesService.createProperty(payload)
+
+      Alert.alert("Thành công", "Tài sản đã được tạo thành công!")
+      router.replace(`/(tabs)/properties/[id]/${newProperty._id}`)
+    } catch (error: any) {
+      Alert.alert("Lỗi", error?.message || "Không thể tạo tài sản.")
+      console.error("Create property failed:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  setLoading(true);
-  try {
-    const newProperty = await propertiesService.createProperty({
-      name,
-      description,
-      price: parseFloat(price),
-      address,
-      imageUrl: imageUrl || undefined,
-    });
-    
-    Alert.alert('Thành công', 'Tài sản đã được tạo thành công!');
-    
-    // Đúng cách navigate sau khi tạo thành công
-    router.replace(`/(tabs)/properties/${newProperty._id}`);
-    
-  } catch (error: any) {
-    Alert.alert('Lỗi', error?.message || 'Không thể tạo tài sản.');
-    console.error('Create property failed:', error);
-  } finally {
-    setLoading(false);
+  const formatNumber = (text: string) => {
+    const numericValue = text.replace(/[^0-9]/g, "")
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   }
-};
-
-  const formatPrice = (text: string) => {
-    // Remove non-numeric characters
-    const numericValue = text.replace(/[^0-9]/g, '');
-    // Add thousand separators
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
 
   const handlePriceChange = (text: string) => {
-    const formatted = formatPrice(text);
-    setPrice(formatted);
-  };
+    const formatted = formatNumber(text)
+    setPrice(formatted)
+  }
+
+  const handleAreaChange = (text: string) => {
+    const formatted = formatNumber(text)
+    setArea(formatted)
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#2563eb" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tạo tài sản mới</Text>
+          <Text style={styles.headerTitle}>Tạo bài đăng mới</Text>
           <View style={styles.placeholder} />
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Form Card */}
           <View style={styles.formCard}>
-            {/* Property Name */}
+            {/* Property Title */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
-                Tên tài sản <Text style={styles.required}>*</Text>
+                Tiêu đề bài đăng <Text style={styles.required}>*</Text>
               </Text>
               <View style={styles.inputContainer}>
                 <Ionicons name="home-outline" size={20} color="#6b7280" style={styles.inputIcon} />
@@ -102,10 +112,18 @@ const handleCreateProperty = async () => {
                   style={styles.input}
                   placeholder="Nhập tên tài sản"
                   placeholderTextColor="#9ca3af"
-                  value={name}
-                  onChangeText={setName}
+                  value={title}
+                  onChangeText={setTitle}
                 />
               </View>
+            </View>
+
+            {/* Property Type */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Loại tài sản <Text style={styles.required}>*</Text>
+              </Text>
+              <PropertyTypeSelector value={propertyType} onSelect={setPropertyType} placeholder="Chọn loại tài sản" />
             </View>
 
             {/* Description */}
@@ -114,7 +132,12 @@ const handleCreateProperty = async () => {
                 Mô tả <Text style={styles.required}>*</Text>
               </Text>
               <View style={[styles.inputContainer, styles.textAreaContainer]}>
-                <Ionicons name="document-text-outline" size={20} color="#6b7280" style={[styles.inputIcon, styles.textAreaIcon]} />
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color="#6b7280"
+                  style={[styles.inputIcon, styles.textAreaIcon]}
+                />
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Mô tả chi tiết về tài sản"
@@ -147,6 +170,25 @@ const handleCreateProperty = async () => {
               </View>
             </View>
 
+            {/* Area */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Diện tích <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="resize-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="0"
+                  placeholderTextColor="#9ca3af"
+                  value={area}
+                  onChangeText={handleAreaChange}
+                  keyboardType="numeric"
+                />
+                <Text style={styles.currency}>m²</Text>
+              </View>
+            </View>
+
             {/* Address */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>
@@ -164,19 +206,45 @@ const handleCreateProperty = async () => {
               </View>
             </View>
 
-            {/* Image URL */}
+            {/* City */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>URL hình ảnh</Text>
+              <Text style={styles.label}>
+                Thành phố <Text style={styles.required}>*</Text>
+              </Text>
               <View style={styles.inputContainer}>
-                <Ionicons name="image-outline" size={20} color="#6b7280" style={styles.inputIcon} />
+                <Ionicons name="business-outline" size={20} color="#6b7280" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="Nhập tên thành phố"
                   placeholderTextColor="#9ca3af"
-                  value={imageUrl}
-                  onChangeText={setImageUrl}
+                  value={city}
+                  onChangeText={setCity}
+                />
+              </View>
+            </View>
+
+            {/* Image URLs */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>URL hình ảnh</Text>
+              <Text style={styles.subLabel}>Nhập nhiều URL, cách nhau bằng dấu phẩy</Text>
+              <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <Ionicons
+                  name="image-outline"
+                  size={20}
+                  color="#6b7280"
+                  style={[styles.inputIcon, styles.textAreaIcon]}
+                />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  placeholderTextColor="#9ca3af"
+                  value={imageUrls}
+                  onChangeText={setImageUrls}
                   keyboardType="url"
                   autoCapitalize="none"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
                 />
               </View>
             </View>
@@ -212,28 +280,28 @@ const handleCreateProperty = async () => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   container: {
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: "#e5e7eb",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -241,12 +309,12 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: "#f1f5f9",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   placeholder: {
     width: 40,
@@ -259,12 +327,12 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   formCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -274,25 +342,31 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
     marginBottom: 8,
   },
+  subLabel: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 8,
+    fontStyle: "italic",
+  },
   required: {
-    color: '#ef4444',
+    color: "#ef4444",
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1.5,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   textAreaContainer: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     paddingVertical: 16,
   },
   inputIcon: {
@@ -304,62 +378,62 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
+    color: "#1f2937",
     paddingVertical: 0,
   },
   textArea: {
     height: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   currency: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     marginLeft: 8,
   },
   createButton: {
-    backgroundColor: '#2563eb',
+    backgroundColor: "#2563eb",
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 3,
-    shadowColor: '#2563eb',
+    shadowColor: "#2563eb",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     marginBottom: 16,
   },
   createButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: "#9ca3af",
     elevation: 1,
     shadowOpacity: 0.1,
   },
   buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   createButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: 8,
   },
   noteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 16,
   },
   noteText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
     marginLeft: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
-});
+})

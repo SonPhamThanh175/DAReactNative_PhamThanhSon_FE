@@ -515,11 +515,12 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     flexDirection: "row",
-    padding: 20,
+    paddingTop: 30,
     backgroundColor: "#ffffff",
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     gap: 12,
+
   },
   editButton: {
     flex: 1,

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useCallback, useEffect } from "react"
 import {
   Text,
@@ -17,17 +19,34 @@ import { useAsyncStorage } from "../../hooks/useAsyncStorage"
 import type { Property } from "../../types/Property"
 import { getPropertyTypeLabel, formatPrice } from "../../utils/validation"
 import { useProperties } from "../../hooks/useProperties"
+import { PropertyFilterModal, type FilterOptions, type PropertyType } from "../../components/PropertyFilterModal"
 
 // Search Component
-const Search = ({ onSearchPress }: { onSearchPress: () => void }) => {
+const Search = ({
+  onSearchPress,
+  onFilterPress,
+  hasActiveFilters,
+}: {
+  onSearchPress: () => void
+  onFilterPress: () => void
+  hasActiveFilters: boolean
+}) => {
   return (
     <View style={styles.searchContainer}>
       <TouchableOpacity style={styles.searchBox} onPress={onSearchPress}>
         <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
         <Text style={styles.searchPlaceholder}>Tìm kiếm bất động sản...</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.filterButton}>
-        <Ionicons name="options" size={20} color="#2563eb" />
+      <TouchableOpacity
+        style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+        onPress={onFilterPress}
+      >
+        <Ionicons name="options" size={20} color={hasActiveFilters ? "#2563eb" : "#6b7280"} />
+        {hasActiveFilters && (
+          <View style={styles.filterBadge}>
+            <View style={styles.filterBadgeDot} />
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   )
@@ -42,21 +61,21 @@ const FeaturedCard = ({ item, onPress }: { item: Property; onPress: () => void }
       <Image source={{ uri: mainImage }} style={styles.featuredImage} />
       <View style={styles.featuredContent}>
         <Text style={styles.featuredTitle} numberOfLines={1}>
-          {item.title}
+          {item.name || item.title}
         </Text>
         <Text style={styles.featuredPrice}>{formatPrice(item.price)}</Text>
         <View style={styles.featuredDetails}>
           <Ionicons name="location-outline" size={14} color="#6b7280" />
           <Text style={styles.featuredLocation} numberOfLines={1}>
-            {item.location}
+            {item.address || item.location}
           </Text>
         </View>
         <View style={styles.featuredSpecs}>
-          <Text style={styles.featuredSpec}>{item.area}m²</Text>
-          <Text style={styles.featuredSpec}>•</Text>
-          <Text style={styles.featuredSpec}>{item.bedrooms} PN</Text>
-          <Text style={styles.featuredSpec}>•</Text>
-          <Text style={styles.featuredSpec}>{getPropertyTypeLabel(item.propertyType)}</Text>
+          {item.area && <Text style={styles.featuredSpec}>{item.area}m²</Text>}
+          {item.area && item.bedrooms && <Text style={styles.featuredSpec}>•</Text>}
+          {item.bedrooms && <Text style={styles.featuredSpec}>{item.bedrooms} PN</Text>}
+          {(item.area || item.bedrooms) && item.propertyType && <Text style={styles.featuredSpec}>•</Text>}
+          {item.propertyType && <Text style={styles.featuredSpec}>{getPropertyTypeLabel(item.propertyType)}</Text>}
         </View>
       </View>
     </TouchableOpacity>
@@ -72,33 +91,42 @@ const PropertyCard = ({ item, onPress }: { item: Property; onPress: () => void }
       <Image source={{ uri: mainImage }} style={styles.propertyImage} />
       <View style={styles.propertyContent}>
         <Text style={styles.propertyTitle} numberOfLines={2}>
-          {item.title}
+          {item.name || item.title}
         </Text>
         <Text style={styles.propertyPrice}>{formatPrice(item.price)}</Text>
         <View style={styles.propertyDetails}>
           <View style={styles.propertyDetailItem}>
             <Ionicons name="location-outline" size={12} color="#6b7280" />
             <Text style={styles.propertyDetailText} numberOfLines={1}>
-              {item.location}
+              {item.address || item.location}
             </Text>
           </View>
-          <View style={styles.propertyDetailItem}>
-            <Ionicons name="bed-outline" size={12} color="#6b7280" />
-            <Text style={styles.propertyDetailText}>{item.bedrooms} PN</Text>
-          </View>
-          <View style={styles.propertyDetailItem}>
-            <Ionicons name="resize-outline" size={12} color="#6b7280" />
-            <Text style={styles.propertyDetailText}>{item.area}m²</Text>
-          </View>
+          {item.bedrooms && (
+            <View style={styles.propertyDetailItem}>
+              <Ionicons name="bed-outline" size={12} color="#6b7280" />
+              <Text style={styles.propertyDetailText}>{item.bedrooms} PN</Text>
+            </View>
+          )}
+          {item.area && (
+            <View style={styles.propertyDetailItem}>
+              <Ionicons name="resize-outline" size={12} color="#6b7280" />
+              <Text style={styles.propertyDetailText}>{item.area}m²</Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   )
 }
 
-// Filters Component
-const Filters = ({ onFilterChange }: { onFilterChange: (filter: string) => void }) => {
-  const [activeFilter, setActiveFilter] = useState("all")
+// Quick Filters Component
+const QuickFilters = ({
+  onFilterChange,
+  activeFilter,
+}: {
+  onFilterChange: (filter: string) => void
+  activeFilter: string
+}) => {
   const filters = [
     { id: "all", label: "Tất cả" },
     { id: "house", label: "Nhà phố" },
@@ -107,18 +135,13 @@ const Filters = ({ onFilterChange }: { onFilterChange: (filter: string) => void 
     { id: "land", label: "Đất nền" },
   ]
 
-  const handleFilterPress = (filterId: string) => {
-    setActiveFilter(filterId)
-    onFilterChange(filterId)
-  }
-
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer}>
       {filters.map((filter) => (
         <TouchableOpacity
           key={filter.id}
           style={[styles.filterChip, activeFilter === filter.id && styles.filterChipActive]}
-          onPress={() => handleFilterPress(filter.id)}
+          onPress={() => onFilterChange(filter.id)}
         >
           <Text style={[styles.filterText, activeFilter === filter.id && styles.filterTextActive]}>{filter.label}</Text>
         </TouchableOpacity>
@@ -132,24 +155,88 @@ export default function HomeScreen() {
   const { properties, featuredProperties, loading, error, refreshProperties } = useProperties()
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [filterModalVisible, setFilterModalVisible] = useState(false)
+  const [quickFilter, setQuickFilter] = useState("all")
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({
+    propertyTypes: [],
+    priceRange: "all",
+  })
 
-  // Filter properties based on selected filter
-  const handleFilterChange = useCallback(
+  // Apply both quick filter and advanced filters
+  const applyAllFilters = useCallback((props: Property[], quickFilterType: string, advancedFilters: FilterOptions) => {
+    console.log("Applying filters:", { quickFilterType, advancedFilters, propsCount: props.length })
+    let filtered = [...props]
+
+    // Apply quick filter first
+    if (quickFilterType !== "all") {
+      console.log("Filtering by property type:", quickFilterType)
+      filtered = filtered.filter((property) => {
+        console.log("Property type:", property.propertyType, "matches:", property.propertyType === quickFilterType)
+        return property.propertyType === quickFilterType
+      })
+      console.log("After quick filter:", filtered.length)
+    }
+
+    // Apply advanced filters
+    if (advancedFilters.propertyTypes.length > 0) {
+      filtered = filtered.filter((property) =>
+        advancedFilters.propertyTypes.includes(property.propertyType as PropertyType),
+      )
+    }
+
+    // Apply price filters
+    if (advancedFilters.minPrice !== undefined) {
+      filtered = filtered.filter((property) => property.price >= advancedFilters.minPrice!)
+    }
+    if (advancedFilters.maxPrice !== undefined) {
+      filtered = filtered.filter((property) => property.price <= advancedFilters.maxPrice!)
+    }
+
+    console.log("Final filtered count:", filtered.length)
+    return filtered
+  }, [])
+
+  // Handle quick filter change
+  const handleQuickFilterChange = useCallback(
     (filter: string) => {
-      if (filter === "all") {
-        setFilteredProperties(properties)
-      } else {
-        const filtered = properties.filter((property) => property.propertyType === filter)
-        setFilteredProperties(filtered)
-      }
+      console.log("Quick filter changed to:", filter)
+      console.log("Properties count:", properties.length)
+      setQuickFilter(filter)
+
+      const filtered = applyAllFilters(properties, filter, activeFilters)
+      console.log("Filtered properties count:", filtered.length)
+      setFilteredProperties(filtered)
     },
-    [properties],
+    [properties, activeFilters, applyAllFilters],
   )
+
+  // Handle advanced filter apply
+  const handleAdvancedFilterApply = useCallback(
+    (filters: FilterOptions) => {
+      setActiveFilters(filters)
+      const filtered = applyAllFilters(properties, quickFilter, filters)
+      setFilteredProperties(filtered)
+    },
+    [properties, quickFilter, applyAllFilters],
+  )
+
+  // Handle filter clear
+  const handleFilterClear = useCallback(() => {
+    setActiveFilters({
+      propertyTypes: [],
+      priceRange: "all",
+    })
+    setQuickFilter("all")
+    setFilteredProperties(properties)
+  }, [properties])
 
   // Initialize filtered properties when properties load
   useEffect(() => {
-    setFilteredProperties(properties)
-  }, [properties])
+    if (properties.length > 0) {
+      const filtered = applyAllFilters(properties, quickFilter, activeFilters)
+      setFilteredProperties(filtered)
+    }
+  }, [properties, quickFilter, activeFilters, applyAllFilters])
 
   const handleCardPress = (id: string) => {
     router.push(`/(tabs)/properties/id/${id}`)
@@ -178,6 +265,15 @@ export default function HomeScreen() {
     if (hour < 12) return "Chào buổi sáng"
     if (hour < 18) return "Chào buổi chiều"
     return "Chào buổi tối"
+  }
+
+  const hasActiveFilters = () => {
+    return (
+      activeFilters.propertyTypes.length > 0 ||
+      activeFilters.priceRange !== "all" ||
+      activeFilters.minPrice !== undefined ||
+      activeFilters.maxPrice !== undefined
+    )
   }
 
   const renderPropertyItem = ({ item }: { item: Property }) => (
@@ -218,6 +314,12 @@ export default function HomeScreen() {
               <Ionicons name="home-outline" size={48} color="#9ca3af" />
               <Text style={styles.noResultsText}>Không có bất động sản nào</Text>
               <Text style={styles.noResultsSubtext}>Hãy thử thay đổi bộ lọc hoặc tìm kiếm khác</Text>
+              {hasActiveFilters() && (
+                <TouchableOpacity style={styles.clearFiltersButton} onPress={handleFilterClear}>
+                  <Ionicons name="refresh-outline" size={16} color="#2563eb" />
+                  <Text style={styles.clearFiltersText}>Xóa bộ lọc</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )
         }
@@ -234,9 +336,7 @@ export default function HomeScreen() {
                 />
                 <View style={styles.userText}>
                   <Text style={styles.greeting}>{getGreeting()}</Text>
-                  <Text style={styles.userName}>
-                    {userLoading ? "Đang tải..." : user?.name || "Người dùng"}
-                  </Text>
+                  <Text style={styles.userName}>{userLoading ? "Đang tải..." : user?.name || "Người dùng"}</Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.notificationButton}>
@@ -248,7 +348,11 @@ export default function HomeScreen() {
             </View>
 
             {/* Search */}
-            <Search onSearchPress={handleSearchPress} />
+            <Search
+              onSearchPress={handleSearchPress}
+              onFilterPress={() => setFilterModalVisible(true)}
+              hasActiveFilters={hasActiveFilters()}
+            />
 
             {/* Featured Section */}
             {featuredProperties.length > 0 && (
@@ -279,9 +383,33 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            <Filters onFilterChange={handleFilterChange} />
+            {/* Filter Results Info */}
+            {(hasActiveFilters() || quickFilter !== "all") && (
+              <View style={styles.filterResultsInfo}>
+                <Text style={styles.filterResultsText}>
+                  Hiển thị {filteredProperties.length} kết quả
+                  {filteredProperties.length !== properties.length && ` (từ ${properties.length} tài sản)`}
+                </Text>
+                {hasActiveFilters() && (
+                  <TouchableOpacity onPress={handleFilterClear}>
+                    <Text style={styles.clearAllFiltersText}>Xóa tất cả</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            <QuickFilters onFilterChange={handleQuickFilterChange} activeFilter={quickFilter} />
           </View>
         }
+      />
+
+      {/* Property Filter Modal */}
+      <PropertyFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={handleAdvancedFilterApply}
+        onClear={handleFilterClear}
+        currentFilters={activeFilters}
       />
     </SafeAreaView>
   )
@@ -380,11 +508,27 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
   },
   filterButton: {
-    backgroundColor: "#f0f9ff",
+    backgroundColor: "#f9fafb",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
+    borderColor: "#e5e7eb",
+    position: "relative",
+  },
+  filterButtonActive: {
+    backgroundColor: "#f0f9ff",
     borderColor: "#bfdbfe",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+  },
+  filterBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ef4444",
   },
   section: {
     marginBottom: 24,
@@ -462,6 +606,23 @@ const styles = StyleSheet.create({
   featuredSpec: {
     fontSize: 12,
     color: "#6b7280",
+  },
+  filterResultsInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  filterResultsText: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  clearAllFiltersText: {
+    fontSize: 14,
+    color: "#2563eb",
+    fontWeight: "600",
   },
   filtersContainer: {
     marginBottom: 24,
@@ -554,6 +715,21 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     textAlign: "center",
     marginTop: 4,
+    marginBottom: 16,
+  },
+  clearFiltersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f9ff",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    color: "#2563eb",
+    fontWeight: "600",
   },
   errorContainer: {
     flex: 1,

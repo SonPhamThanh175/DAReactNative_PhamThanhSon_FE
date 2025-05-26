@@ -5,6 +5,8 @@ export const propertiesService = {
   async createProperty(data: Omit<Property, '_id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<Property> {
     try {
       const response = await api.post('/properties', data);
+      console.log("response create puduct", response);
+      
       return response.data;
     } catch (error: any) {
       console.error('Create property API error:', error.response?.data || error.message);
