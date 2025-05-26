@@ -148,7 +148,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Hồ sơ",
+          title: "Cài đặt",
           tabBarIcon: ({ color, size, focused }) => (
             <View
               style={[
@@ -157,7 +157,7 @@ export default function TabLayout() {
               ]}
             >
               <Ionicons
-                name={focused ? "person" : "person-outline"}
+                name={focused ? "settings" : "settings-outline"}
                 size={size}
                 color={color}
               />
