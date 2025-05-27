@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useCallback, useEffect } from "react"
 import {
   Text,
@@ -171,8 +169,8 @@ export default function HomeScreen() {
     if (quickFilterType !== "all") {
       console.log("Filtering by property type:", quickFilterType)
       filtered = filtered.filter((property) => {
-        console.log("Property type:", property.propertyType, "matches:", property.propertyType === quickFilterType)
-        return property.propertyType === quickFilterType
+        console.log("Property type:", property.type, "matches:", property.type === quickFilterType)
+        return property.type === quickFilterType
       })
       console.log("After quick filter:", filtered.length)
     }
@@ -180,7 +178,7 @@ export default function HomeScreen() {
     // Apply advanced filters
     if (advancedFilters.propertyTypes.length > 0) {
       filtered = filtered.filter((property) =>
-        advancedFilters.propertyTypes.includes(property.propertyType as PropertyType),
+        advancedFilters.propertyTypes.includes(property.type as PropertyType),
       )
     }
 
@@ -242,9 +240,9 @@ export default function HomeScreen() {
     router.push(`/(tabs)/properties/id/${id}`)
   }
 
-  const handleSearchPress = () => {
-    router.push("/(tabs)/search")
-  }
+  // const handleSearchPress = () => {
+  //   router.push("/(tabs)/search")
+  // }
 
   const handleSeeAllFeatured = () => {
     router.push("/(tabs)/properties")

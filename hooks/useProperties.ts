@@ -1,7 +1,4 @@
-"use client"
-
 import { useState, useEffect } from "react"
-// import { propertiesService } from "../services/propertiesService"
 import type { Property } from "../types/Property"
 import { propertiesService } from "@services/properties.service"
 
@@ -21,10 +18,9 @@ export const useProperties = () => {
       const propertiesArray = Array.isArray(data) ? data : [data]
       setProperties(propertiesArray)
 
-      // Get featured properties (latest 5 properties)
       const featured = propertiesArray
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 5)
+        .slice(0, 10)
       setFeaturedProperties(featured)
     } catch (err: any) {
       setError(err.message || "Có lỗi xảy ra khi tải dữ liệu")

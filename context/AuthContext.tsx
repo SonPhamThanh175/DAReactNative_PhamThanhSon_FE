@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function useSession() {
   const context = useContext(AuthContext);
+  console.log('useSession context:', context);
   if (context === undefined) {
     throw new Error('useSession must be used within an AuthSessionProvider');
   }
@@ -38,7 +39,8 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
         setSession(token);
         // Optionally fetch user info with token
         // const fetchedUser = await authService.getUserProfile(token);
-        // setUser(fetchedUser);
+        const user = await SecureStore.getItemAsync('user');
+        setUser(user);
       } catch (error) {
         console.error('Failed to load session from SecureStore:', error);
       } finally {

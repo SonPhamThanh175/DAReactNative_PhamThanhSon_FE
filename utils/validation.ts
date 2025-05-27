@@ -9,11 +9,32 @@ export const isValidPassword = (password: string): boolean => {
 };
 
 export const isValidPhoneNumber = (phone: string): boolean => {
-  // Simple check for 10-11 digits
   const phoneRegex = /^\d{10,11}$/;
   return phoneRegex.test(phone);
 };
 
+export const formatDate = (date: string | Date | undefined | null): string => {
+  if (!date) {
+    return 'Chưa cập nhật';
+  }
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) {
+      return 'Ngày không hợp lệ';
+    }
+    return dateObj.toLocaleDateString('vi-VN');
+  } catch (error) {
+    return 'Ngày không hợp lệ';
+  }
+};
+
+export const formatArea = (area: number | undefined | null): string => {
+  if (area === undefined || area === null || isNaN(area)) {
+    return '0';
+  }
+  return area.toLocaleString('vi-VN');
+};
 export const formatPrice = (price: number): string => {
   if (price >= 1000000000) {
     return `${(price / 1000000000).toFixed(1)} tỷ`
